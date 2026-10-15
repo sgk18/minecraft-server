@@ -2157,7 +2157,14 @@ AZURE_STORAGE_SHARE=acismineshare</code></pre>
         const resp = await fetch(`/api/control?action=${encodeURIComponent(action)}`, {
           method: 'POST'
         });
-        const res = await resp.json();
+        const contentType = resp.headers.get('content-type') || '';
+        let res;
+        if (contentType.includes('application/json')) {
+          res = await resp.json();
+        } else {
+          const raw = await resp.text();
+          throw new Error(`Server returned non-JSON (${resp.status}): ${raw.slice(0, 120)}`);
+        }
 
         if (res.success) {
           showToast(`Success: ${res.message}`);
