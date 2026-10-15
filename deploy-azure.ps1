@@ -112,6 +112,7 @@ try {
             LEVEL_NAME="Bedrock level" `
             SERVER_PORT=19132 `
             SERVER_PORT_V6=19133 `
+            ONLINE_MODE="false" `
         --azure-file-volume-account-name $StorageAccountName `
         --azure-file-volume-account-key $STORAGE_KEY `
         --azure-file-volume-share-name $FileShareName `
@@ -140,6 +141,7 @@ try {
             LEVEL_NAME="Bedrock level" `
             SERVER_PORT=19132 `
             SERVER_PORT_V6=19133 `
+            ONLINE_MODE="false" `
         --azure-file-volume-account-name $StorageAccountName `
         --azure-file-volume-account-key $STORAGE_KEY `
         --azure-file-volume-share-name $FileShareName `
