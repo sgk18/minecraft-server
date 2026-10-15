@@ -1639,6 +1639,14 @@ AZURE_STORAGE_SHARE=acismineshare</code></pre>
       setInterval(updateClock, 1000);
     }
 
+    // --- API Endpoint Resolver (Bridges port 3000 IDE preview to port 8080 Node server) ---
+    function resolveApiUrl(path) {
+      if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port === '3000') {
+        return `http://${window.location.hostname}:8080${path}`;
+      }
+      return path;
+    }
+
     // --- Load Config from Vercel / Environment ---
     async function loadEnvironmentConfig() {
       // Check URL parameters first (e.g. ?host=...&port=...)
@@ -1648,7 +1656,7 @@ AZURE_STORAGE_SHARE=acismineshare</code></pre>
 
       try {
         addLog('NET', 'Fetching environment variables from /api/config...');
-        const resp = await fetch('/api/config');
+        const resp = await fetch(resolveApiUrl('/api/config'));
         if (resp.ok) {
           const cfg = await resp.json();
           currentConfig = { ...currentConfig, ...cfg };
@@ -1666,7 +1674,7 @@ AZURE_STORAGE_SHARE=acismineshare</code></pre>
 
       // If host still empty, default to Azure DNS format
       if (!currentConfig.host) {
-        currentConfig.host = 'minesvrbedrock.southcentralus.azurecontainer.io';
+        currentConfig.host = 'minesvrbedrock.centralindia.azurecontainer.io';
       }
 
       // Update UI with environment details
@@ -1712,15 +1720,16 @@ AZURE_STORAGE_SHARE=acismineshare</code></pre>
         let data = null;
         let roundtripLatency = 0;
 
-        // Try /api/status first (Vercel Serverless Function)
+        // Try /api/status first (Vercel Serverless Function or Node dev server)
         try {
-          const apiResp = await fetch(`/api/status?host=${encodeURIComponent(host)}&port=${port}`);
+          const apiResp = await fetch(resolveApiUrl(`/api/status?host=${encodeURIComponent(host)}&port=${port}`));
           roundtripLatency = Math.round(performance.now() - fetchStart);
-          if (apiResp.ok) {
+          const ct = apiResp.headers.get('content-type') || '';
+          if (apiResp.ok && ct.includes('application/json')) {
             data = await apiResp.json();
           }
         } catch (apiErr) {
-          addLog('WARN', `Serverless endpoint /api/status error: ${apiErr.message}. Trying direct client resolver fallback...`);
+          addLog('WARN', `Endpoint /api/status error: ${apiErr.message}. Trying direct client resolver fallback...`);
         }
 
         // Direct public fallback if /api/status is not running
@@ -2154,7 +2163,7 @@ AZURE_STORAGE_SHARE=acismineshare</code></pre>
       }
 
       try {
-        const resp = await fetch(`/api/control?action=${encodeURIComponent(action)}`, {
+        const resp = await fetch(resolveApiUrl(`/api/control?action=${encodeURIComponent(action)}`), {
           method: 'POST'
         });
         const contentType = resp.headers.get('content-type') || '';
