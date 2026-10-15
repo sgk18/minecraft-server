@@ -1,0 +1,22 @@
+{
+  "name": "minecraft-bedrock-azure-status",
+  "version": "1.0.0",
+  "description": "Palworld-style Minecraft Bedrock Azure Status Dashboard for Vercel",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "minecraft",
+    "bedrock",
+    "azure",
+    "palworld",
+    "status",
+    "dashboard",
+    "vercel"
+  ],
+  "author": "",
+  "license": "MIT"
+}

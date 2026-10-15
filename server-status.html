@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Bedrock | Azure Status & World Settings</title>
+  <meta name="description" content="Real-time Palworld-inspired server status dashboard and world settings manager for Minecraft Bedrock hosted on Microsoft Azure, ready for Vercel deployment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #080c14;
+      --bg-surface: #0e1626;
+      --bg-card: rgba(15, 23, 42, 0.72);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.35);
+      --pal-cyan: #00e5ff;
+      --pal-blue: #38bdf8;
+      --pal-gold: #fbbf24;
+      --pal-amber: #f59e0b;
+      --pal-emerald: #10b981;
+      --pal-emerald-glow: rgba(16, 185, 129, 0.3);
+      --pal-rose: #f43f5e;
+      --pal-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-display: 'Outfit', sans-serif;
+      --font-sans: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-card: 0 12px 36px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px var(--border-subtle);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 25%, rgba(245, 158, 11, 0.08) 0%, transparent 35%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.07) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+      padding-bottom: 60px;
+    }
+
+    /* Top Navigation */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      background: rgba(8, 12, 20, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(2, 132, 199, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .brand-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: #fff;
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 2px 8px;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(14, 165, 233, 0.2));
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      color: var(--pal-cyan);
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    .brand-text p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .cloud-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      color: #7dd3fc;
+    }
+
+    .cloud-badge svg {
+      width: 16px;
+      height: 16px;
+      fill: #38bdf8;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border-color: var(--border-subtle);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    /* Palworld Style Hero Header */
+    .hero-panel {
+      position: relative;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(20, 31, 56, 0.88) 100%);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      margin-bottom: 24px;
+      backdrop-filter: blur(20px);
+    }
+
+    .hero-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #00e5ff, #38bdf8, #f59e0b, #10b981);
+    }
+
+    .hero-inner {
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .hero-left {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hero-title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(180deg, #ffffff 30%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      background: rgba(148, 163, 184, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      transition: all 0.3s;
+    }
+
+    .status-pill.online {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 16px var(--pal-emerald-glow);
+    }
+
+    .status-pill.offline {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border-color: rgba(244, 63, 94, 0.4);
+      box-shadow: 0 0 16px rgba(244, 63, 94, 0.3);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.75); }
+    }
+
+    .hero-motd {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      min-height: 24px;
+    }
+
+    .hero-endpoint-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      width: fit-content;
+      margin-top: 4px;
+    }
+
+    .endpoint-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--pal-cyan);
+      letter-spacing: 0.5px;
+    }
+
+    .endpoint-val {
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      color: #f1f5f9;
+      letter-spacing: 0.2px;
+    }
+
+    .copy-icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .copy-icon-btn:hover {
+      color: var(--pal-cyan);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-right-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .last-updated {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* KPI Quick Stat Cards Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(16px);
+      transition: transform 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, var(--accent-light, rgba(56, 189, 248, 0.15)) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .kpi-card.cyan { --accent-light: rgba(0, 229, 255, 0.2); }
+    .kpi-card.gold { --accent-light: rgba(251, 191, 36, 0.2); }
+    .kpi-card.green { --accent-light: rgba(16, 185, 129, 0.2); }
+    .kpi-card.purple { --accent-light: rgba(168, 85, 247, 0.2); }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .kpi-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .kpi-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .kpi-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .kpi-val {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .kpi-sub {
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+    }
+
+    .kpi-progress {
+      margin-top: 10px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .kpi-progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bg-cyan { background: linear-gradient(90deg, #00e5ff, #38bdf8); }
+    .bg-emerald { background: linear-gradient(90deg, #10b981, #34d399); }
+    .bg-amber { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .bg-purple { background: linear-gradient(90deg, #a855f7, #c084fc); }
+
+    /* Palworld Style Navigation Tabs */
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 24px;
+      padding-bottom: 4px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: var(--pal-cyan);
+      background: rgba(0, 229, 255, 0.08);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 12px;
+      right: 12px;
+      height: 3px;
+      background: var(--pal-cyan);
+      box-shadow: 0 0 12px var(--pal-cyan);
+      border-radius: 999px;
+    }
+
+    .tab-badge {
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .tab-btn.active .tab-badge {
+      background: rgba(0, 229, 255, 0.2);
+      color: var(--pal-cyan);
+    }
+
+    /* Tab Panes */
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Content Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(16px);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .card-title-group h2 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title-group p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    table.data-table th {
+      padding: 12px 18px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    table.data-table td {
+      padding: 14px 18px;
+      font-size: 0.86rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+      vertical-align: middle;
+    }
+
+    table.data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .player-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .player-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+    }
+
+    .val-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .val-true { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .val-false { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .val-custom { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .val-gold { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .val-none { background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); }
+
+    /* Palworld Settings Matrix (Rules & Configuration) */
+    .settings-toolbar {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+      max-width: 480px;
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 14px 10px 40px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--pal-cyan);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.2);
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-pill:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .filter-pill.active {
+      background: rgba(0, 229, 255, 0.15);
+      border-color: rgba(0, 229, 255, 0.4);
+      color: var(--pal-cyan);
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+    }
+
+    .setting-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+
+    .setting-card:hover {
+      background: rgba(26, 38, 66, 0.5);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .setting-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .setting-info h4 {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .setting-key {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--pal-cyan);
+      margin-top: 2px;
+    }
+
+    .setting-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .setting-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 10px;
+    }
+
+    .setting-env-tag {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-dim);
+    }
+
+    /* Azure Infrastructure Tab */
+    .azure-spec-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .azure-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+
+    .azure-box-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .azure-box-val {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Terminal Console */
+    .terminal {
+      background: #05080f;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      font-family: var(--font-mono);
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+    }
+
+    .terminal-header {
+      background: #0d121e;
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    .terminal-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .terminal-body {
+      padding: 18px;
+      height: 380px;
+      overflow-y: auto;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    .log-line {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+
+    .log-time { color: #64748b; flex-shrink: 0; }
+    .log-sys { color: #38bdf8; }
+    .log-net { color: #34d399; }
+    .log-warn { color: #fbbf24; }
+    .log-err { color: #f43f5e; }
+    .log-client { color: #c084fc; }
+
+    .terminal-input-bar {
+      display: flex;
+      background: #080d17;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .prompt-sym { color: var(--pal-cyan); font-weight: 700; }
+
+    .term-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    .code-block {
+      background: #05080f;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      position: relative;
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+
+    .code-copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+
+    .code-copy-btn:hover { background: rgba(255, 255, 255, 0.2); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-card {
+      background: #0e1626;
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-md);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      width: 100%;
+      max-width: 600px;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      color: #fff;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .modal-body {
+      padding: 24px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 1024px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+      .azure-spec-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 14px 18px; }
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-right-actions { align-items: flex-start; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .settings-grid { grid-template-columns: 1fr; }
+      .settings-toolbar { flex-direction: column; align-items: stretch; }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      border: 1px solid var(--pal-cyan);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M21 16.5C21 16.88 20.79 17.21 20.47 17.38L12.57 21.82C12.41 21.91 12.21 21.96 12 21.96C11.79 21.96 11.59 21.91 11.43 21.82L3.53 17.38C3.21 17.21 3 16.88 3 16.5V7.5C3 7.12 3.21 6.79 3.53 6.62L11.43 2.18C11.59 2.09 11.79 2.04 12 2.04C12.21 2.04 12.41 2.09 12.57 2.18L20.47 6.62C20.79 6.79 21 7.12 21 7.5V16.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3.27 6.96L12 12.01L20.73 6.96" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 22.08V12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1 id="brandServerTitle">Bedrock Operations Center <span class="brand-badge">Vercel & Azure</span></h1>
+        <p id="brandSubTitle">Live Minecraft Status • Microsoft Azure Container Instances</p>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <div class="cloud-badge" id="serverTimeBadge" title="Live Server Time (UTC)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span style="font-family: var(--font-mono);">Server Time: <strong id="navServerClock" style="color: var(--pal-cyan);">--:--:-- UTC</strong></span>
+      </div>
+
+      <div class="cloud-badge" id="azureRegionBadge" title="Azure Resource Group & Region">
+        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
+        <span id="azureRegionText">Loading environment...</span>
+      </div>
+
+      <button class="btn btn-outline" id="btnConfigModal">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Target Endpoint
+      </button>
+
+      <button class="btn btn-primary" id="btnRefreshStatus">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="refreshSvg"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Body Content -->
+  <main class="container">
+
+    <!-- Hero Server Panel (Palworld Server Style) -->
+    <section class="hero-panel">
+      <div class="hero-inner">
+        <div class="hero-left">
+          <div class="hero-title-row">
+            <h2 class="hero-title" id="serverTitle">Connecting to server...</h2>
+            <div class="status-pill" id="statusBadge">
+              <span class="pulse-dot"></span>
+              <span id="statusText">FETCHING</span>
+            </div>
+            <span class="val-badge val-none" id="versionBadge">Protocol --</span>
+            <span class="val-badge val-none" id="protocolBadge">Bedrock --</span>
+          </div>
+
+          <p class="hero-motd" id="serverMotd">Querying live server state and connection latency...</p>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
+            <div class="hero-endpoint-box">
+              <span class="endpoint-label">Endpoint:</span>
+              <span class="endpoint-val" id="serverAddressDisplay">--:--</span>
+              <button class="copy-icon-btn" id="btnCopyAddress" title="Copy Address">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+
+            <div class="hero-endpoint-box">
+              <span class="endpoint-label">Server Time:</span>
+              <span class="endpoint-val" id="heroServerClock" style="color: var(--pal-gold);">--:--:-- UTC</span>
+              <span style="font-size: 0.75rem; color: var(--text-dim);" id="heroRegionClock">(--:-- CDT)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-right-actions">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+            <button class="btn btn-primary" id="btnStartServer" onclick="sendServerAction('start')" style="background: linear-gradient(135deg, #10b981, #059669); padding: 8px 14px; font-size: 0.8rem;" title="Start Azure Container">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Start
+            </button>
+            <button class="btn btn-outline" id="btnRestartServer" onclick="sendServerAction('restart')" style="border-color: rgba(251, 191, 36, 0.4); color: #fbbf24; padding: 8px 14px; font-size: 0.8rem;" title="Restart Azure Container">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              Restart
+            </button>
+            <button class="btn btn-outline" id="btnStopServer" onclick="sendServerAction('stop')" style="border-color: rgba(244, 63, 94, 0.4); color: #fb7185; padding: 8px 14px; font-size: 0.8rem;" title="Stop Azure Container (Save Costs)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+              Stop
+            </button>
+            <button class="btn btn-primary" id="btnDirectConnect" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); padding: 8px 14px; font-size: 0.8rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Quick Join
+            </button>
+          </div>
+          <span class="last-updated">Auto-refreshing in <strong id="countdown">15</strong>s • <span id="lastUpdatedTime">Fetching...</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Quick Metrics (Palworld Status Cards) -->
+    <section class="kpi-grid">
+      <!-- Active Players -->
+      <div class="kpi-card cyan">
+        <div class="kpi-header">
+          <span class="kpi-title">Active Players</span>
+          <div class="kpi-icon" style="color: var(--pal-cyan)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+        </div>
+        <div class="kpi-val">
+          <span id="playerCountVal">--</span>
+          <span class="kpi-sub">/ <span id="playerMaxVal">--</span> Max</span>
+        </div>
+        <div class="kpi-progress">
+          <div class="kpi-progress-bar bg-cyan" id="playerProgressBar" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Real Latency / Roundtrip Ping -->
+      <div class="kpi-card gold">
+        <div class="kpi-header">
+          <span class="kpi-title">Response Latency</span>
+          <div class="kpi-icon" style="color: var(--pal-gold)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+        </div>
+        <div class="kpi-val">
+          <span id="pingVal">--</span>
+          <span class="kpi-sub" id="pingSub">ms (Roundtrip)</span>
+        </div>
+        <div class="kpi-progress">
+          <div class="kpi-progress-bar bg-amber" id="pingProgressBar" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Gamemode / World Type -->
+      <div class="kpi-card green">
+        <div class="kpi-header">
+          <span class="kpi-title">Server Gamemode</span>
+          <div class="kpi-icon" style="color: var(--pal-emerald)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+          </div>
+        </div>
+        <div class="kpi-val">
+          <span id="gamemodeVal">--</span>
+        </div>
+        <div class="kpi-progress">
+          <div class="kpi-progress-bar bg-emerald" id="gamemodeProgressBar" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Cloud / Container Health -->
+      <div class="kpi-card purple">
+        <div class="kpi-header">
+          <span class="kpi-title">Infrastructure Host</span>
+          <div class="kpi-icon" style="color: var(--pal-purple)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-val">
+          <span id="hostHealthVal">Azure ACI</span>
+          <span class="kpi-sub" id="hostHealthSub">Container</span>
+        </div>
+        <div class="kpi-progress">
+          <div class="kpi-progress-bar bg-purple" id="hostProgressBar" style="width: 0%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Palworld Navigation Tabs -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-overview">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Overview & Players
+        <span class="tab-badge" id="playerTabBadge">-- Online</span>
+      </button>
+
+      <button class="tab-btn" data-tab="tab-settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        World Settings & Rules
+        <span class="tab-badge" id="settingsCountBadge">Loaded</span>
+      </button>
+
+      <button class="tab-btn" data-tab="tab-azure">
+        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
+        Azure Cloud & Environment
+      </button>
+
+      <button class="tab-btn" data-tab="tab-console">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 14H4v-2h7v2zm-4.7-6.7l-1.4 1.4L1 10.4l4.9-4.9 1.4 1.4L3.8 10.4l3.5 3.5v.4z"/></svg>
+        Live Connection Diagnostics
+      </button>
+    </nav>
+
+    <!-- TAB 1: OVERVIEW & PLAYERS -->
+    <div class="tab-pane active" id="tab-overview">
+      <div class="grid-2">
+        <!-- Live Player Roster -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Connected Players
+              </h2>
+              <p>Live session participants reported by Bedrock status query</p>
+            </div>
+            <span class="val-badge val-custom" id="playerListBadge">Live Query</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>GamerTag</th>
+                    <th>Status</th>
+                    <th>UUID / Identifier</th>
+                  </tr>
+                </thead>
+                <tbody id="playerTableBody">
+                  <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-dim); padding: 32px;">
+                      Fetching active player roster...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry & Hardware Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                Live Query Telemetry & Endpoint Details
+              </h2>
+              <p>Real endpoint attributes resolved by API</p>
+            </div>
+            <span class="val-badge val-none" id="telemetryStatusBadge">Querying</span>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="padding: 14px; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.82rem;">
+                <div>
+                  <div style="color: var(--text-dim)">Resolved IP Address</div>
+                  <div style="font-family: var(--font-mono); color: #38bdf8;" id="telResolvedIp">--</div>
+                </div>
+                <div>
+                  <div style="color: var(--text-dim)">Transport Protocol</div>
+                  <div style="font-family: var(--font-mono); color: #fff;" id="telProtocol">--</div>
+                </div>
+                <div>
+                  <div style="color: var(--text-dim)">Server Software / Edition</div>
+                  <div style="font-family: var(--font-mono); color: #fbbf24;" id="telSoftware">Minecraft Bedrock</div>
+                </div>
+                <div>
+                  <div style="color: var(--text-dim)">Network Port</div>
+                  <div style="font-family: var(--font-mono); color: #34d399;" id="telPort">-- (UDP)</div>
+                </div>
+              </div>
+
+              <div id="azureTelemetryCard" style="display: none; padding: 14px; background: rgba(14, 165, 233, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(14, 165, 233, 0.25);">
+                <div style="font-size: 0.8rem; font-weight: 700; color: #7dd3fc; margin-bottom: 8px;">Azure Container Instance Live Metrics</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem;">
+                  <div>State: <strong id="azAciState" style="color: #fff;">--</strong></div>
+                  <div>CPU: <strong id="azAciCpu" style="color: #fff;">-- vCPU</strong></div>
+                  <div>RAM: <strong id="azAciRam" style="color: #fff;">-- GB</strong></div>
+                  <div>Provisioning: <strong id="azAciProv" style="color: #fff;">--</strong></div>
+                </div>
+              </div>
+
+              <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
+                <p><strong>Note on Vercel Hosting:</strong> This status page fetches all telemetry on-demand from the serverless backend (<code>/api/status</code>). All host parameters are controlled via your Vercel Environment Variables.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: PALWORLD STYLE SETTINGS & WORLD RULES MATRIX -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              World Parameters & Game Settings
+            </h2>
+            <p>Configured for this server instance • Live verified parameters highlighted</p>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" id="btnExportProperties" title="Download server.properties file">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export server.properties
+            </button>
+            <button class="btn btn-outline" id="btnExportEnv" title="Export as Azure CLI / Docker env vars">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+              Export Env File
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="settings-toolbar">
+            <div class="search-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" class="search-input" id="settingSearch" placeholder="Search world rule, property key, or env variable...">
+            </div>
+
+            <div class="filter-pills" id="categoryFilters">
+              <button class="filter-pill active" data-category="all">All Settings</button>
+              <button class="filter-pill" data-category="gameplay">Gameplay & World</button>
+              <button class="filter-pill" data-category="performance">Performance & Simulation</button>
+              <button class="filter-pill" data-category="security">Security & Anti-Cheat</button>
+              <button class="filter-pill" data-category="network">Network & Azure</button>
+            </div>
+          </div>
+
+          <div class="settings-grid" id="settingsGrid">
+            <!-- Dynamically populated from settings data -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: AZURE CLOUD & ENVIRONMENT VARIABLES TAB -->
+    <div class="tab-pane" id="tab-azure">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+              Azure Infrastructure & Environment Setup
+            </h2>
+            <p>Environment variables fetched dynamically from Vercel runtime</p>
+          </div>
+          <span class="val-badge val-custom">Vercel & Azure</span>
+        </div>
+
+        <div class="card-body">
+          <div class="azure-spec-grid">
+            <div class="azure-box">
+              <div class="azure-box-label">Azure Resource Group</div>
+              <div class="azure-box-val" id="envResourceGroup" style="color: var(--pal-cyan);">--</div>
+            </div>
+            <div class="azure-box">
+              <div class="azure-box-label">Container Instance Name</div>
+              <div class="azure-box-val" id="envContainerName">--</div>
+            </div>
+            <div class="azure-box">
+              <div class="azure-box-label">Storage Account & Share</div>
+              <div class="azure-box-val" id="envStorageInfo" style="color: var(--pal-gold);">--</div>
+            </div>
+          </div>
+
+          <!-- Quick Container Power Controls -->
+          <div style="margin-bottom: 24px; padding: 18px 22px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-glow); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <h4 style="font-size: 0.98rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                Azure Container Power Actions
+              </h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">
+                Start, stop (pause billing when nobody is playing), or restart your container instance.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn btn-primary" onclick="sendServerAction('start')" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.82rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Start Container
+              </button>
+              <button class="btn btn-outline" onclick="sendServerAction('restart')" style="border-color: rgba(251, 191, 36, 0.4); color: #fbbf24; font-size: 0.82rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                Restart Container
+              </button>
+              <button class="btn btn-outline" onclick="sendServerAction('stop')" style="border-color: rgba(244, 63, 94, 0.4); color: #fb7185; font-size: 0.82rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                Stop Container
+              </button>
+            </div>
+          </div>
+
+          <h3 style="font-family: var(--font-display); font-size: 1.1rem; color: #fff; margin-bottom: 12px;">
+            Vercel Environment Variables Configuration
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+            In your <strong>Vercel Dashboard &rarr; Project Settings &rarr; Environment Variables</strong>, add these variables:
+          </p>
+
+          <div class="code-block">
+            <button class="code-copy-btn" onclick="copyVercelEnvTemplate()">Copy Vercel Env</button>
+            <pre><code id="vercelEnvBlock">MINECRAFT_SERVER_HOST=minesvrbedrock.southcentralus.azurecontainer.io
+MINECRAFT_SERVER_PORT=19132
+SERVER_NAME=Azure Bedrock Realm
+AZURE_REGION=southcentralus
+AZURE_RESOURCE_GROUP=mineResGroup
+AZURE_CONTAINER_NAME=minecotainer
+AZURE_STORAGE_ACCOUNT=acismineacc
+AZURE_STORAGE_SHARE=acismineshare</code></pre>
+          </div>
+
+          <h3 style="font-family: var(--font-display); font-size: 1.1rem; color: #fff; margin-top: 24px; margin-bottom: 12px;">
+            Azure CLI Container Management Commands
+          </h3>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div class="azure-box">
+              <div class="azure-box-label">Start Server (Resume Game)</div>
+              <div class="code-block" style="padding: 10px; margin-top: 6px; font-size: 0.75rem;">
+                <code id="cmdStartServer">az container start -g mineResGroup -n minecotainer</code>
+              </div>
+            </div>
+            <div class="azure-box">
+              <div class="azure-box-label">Stop Server (Save Azure Billing)</div>
+              <div class="code-block" style="padding: 10px; margin-top: 6px; font-size: 0.75rem;">
+                <code id="cmdStopServer">az container stop -g mineResGroup -n minecotainer</code>
+              </div>
+            </div>
+            <div class="azure-box">
+              <div class="azure-box-label">Stream Container Logs</div>
+              <div class="code-block" style="padding: 10px; margin-top: 6px; font-size: 0.75rem;">
+                <code id="cmdLogsServer">az container logs -g mineResGroup -n minecotainer --follow</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: LIVE SERVER CONSOLE & CONNECTION DIAGNOSTICS -->
+    <div class="tab-pane" id="tab-console">
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="terminal-title">Live Connection & Query Diagnostics</div>
+          <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.72rem;" onclick="clearConsole()">
+            Clear Log
+          </button>
+        </div>
+
+        <div class="terminal-body" id="terminalLogs">
+          <!-- Populated by real fetch events -->
+        </div>
+
+        <form class="terminal-input-bar" id="terminalForm">
+          <span class="prompt-sym">&gt;</span>
+          <input type="text" class="term-input" id="terminalInput" placeholder="Enter /help, /list, or custom query test..." autocomplete="off">
+          <button type="submit" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.78rem;">Submit</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Target Host Config Modal -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Server Target Configuration</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Configure the active target host. When hosted on Vercel, defaults are automatically provided by your environment variables.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Server Host / Azure FQDN</label>
+            <input type="text" id="inputHost" class="search-input" value="" placeholder="e.g. minesvrbedrock.southcentralus.azurecontainer.io" style="margin-top: 6px; padding-left: 14px;">
+          </div>
+          <div>
+            <label style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">UDP Port</label>
+            <input type="number" id="inputPort" class="search-input" value="19132" style="margin-top: 6px; padding-left: 14px;">
+          </div>
+          <div>
+            <label style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Display Name</label>
+            <input type="text" id="inputName" class="search-input" value="" placeholder="e.g. Azure Bedrock Realm" style="margin-top: 6px; padding-left: 14px;">
+          </div>
+          <button class="btn btn-primary" id="btnSaveConfig" style="margin-top: 8px;">
+            Save & Query Endpoint
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Element -->
+  <div class="toast" id="toastBox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pal-cyan)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    <span id="toastMsg">Action completed</span>
+  </div>
+
+  <script>
+    // --- Bedrock World Settings Specifications ---
+    const BASE_SETTINGS = [
+      { key: 'server-name', env: 'SERVER_NAME', name: 'Server Display Name', value: '', category: 'gameplay', desc: 'The server name displayed in the Bedrock multiplayer list and pause menu.' },
+      { key: 'gamemode', env: 'GAMEMODE', name: 'Default Game Mode', value: '', category: 'gameplay', desc: 'Starting game mode: survival, creative, or adventure.' },
+      { key: 'difficulty', env: 'DIFFICULTY', name: 'World Difficulty', value: 'normal', category: 'gameplay', desc: 'Game difficulty: peaceful, easy, normal, hard. Controls mob damage.' },
+      { key: 'allow-cheats', env: 'ALLOW_CHEATS', name: 'Allow Cheats & Commands', value: 'false', category: 'gameplay', desc: 'Controls whether commands like /give, /tp, or /time can be executed.' },
+      { key: 'max-players', env: 'MAX_PLAYERS', name: 'Maximum Player Capacity', value: '', category: 'network', desc: 'Maximum concurrent players permitted to join the Azure server.' },
+      { key: 'online-mode', env: 'ONLINE_MODE', name: 'Xbox Live / MSA Auth', value: 'true', category: 'security', desc: 'Requires Microsoft / Xbox Live authentication to prevent impersonation.' },
+      { key: 'allow-list', env: 'ALLOW_LIST', name: 'Allow-List Enforcement (Whitelist)', value: 'false', category: 'security', desc: 'When enabled, only player gamertags registered in allowlist.json can join.' },
+      { key: 'view-distance', env: 'VIEW_DISTANCE', name: 'Render / View Distance', value: '32', category: 'performance', desc: 'Maximum client view distance in chunks sent by server.' },
+      { key: 'tick-distance', env: 'TICK_DISTANCE', name: 'Simulation / Tick Distance', value: '4', category: 'performance', desc: 'Radius of chunks updated each tick (crops, redstone, entity AI).' },
+      { key: 'player-idle-timeout', env: 'PLAYER_IDLE_TIMEOUT', name: 'AFK Idle Timeout (Minutes)', value: '30', category: 'security', desc: 'Minutes of inactivity before an AFK player is disconnected.' },
+      { key: 'max-threads', env: 'MAX_THREADS', name: 'Server Worker Threads', value: '4', category: 'performance', desc: 'Threads used by the Bedrock engine for world loading and physics.' },
+      { key: 'level-seed', env: 'LEVEL_SEED', name: 'World Generation Seed', value: '', category: 'gameplay', desc: 'Seed value used to generate world terrain and biomes.' },
+      { key: 'level-name', env: 'LEVEL_NAME', name: 'World Directory Name', value: 'Bedrock level', category: 'gameplay', desc: 'Name of the world subfolder stored on the persistent Azure File Share.' },
+      { key: 'level-type', env: 'LEVEL_TYPE', name: 'World Type', value: 'DEFAULT', category: 'gameplay', desc: 'DEFAULT infinite world, FLAT creative testing plane, or LEGACY.' },
+      { key: 'default-player-permission-level', env: 'DEFAULT_PLAYER_PERMISSION_LEVEL', name: 'Default Player Permission', value: 'member', category: 'security', desc: 'Default permission on join: visitor, member, or operator.' },
+      { key: 'texturepack-required', env: 'TEXTUREPACK_REQUIRED', name: 'Enforce Resource Pack', value: 'false', category: 'gameplay', desc: 'Forces connecting clients to download and accept server texture packs.' },
+      { key: 'server-authoritative-movement', env: 'SERVER_AUTHORITATIVE_MOVEMENT', name: 'Server Authoritative Movement', value: 'server-auth', category: 'security', desc: 'Server verifies player coordinates to stop fly and speed cheats.' },
+      { key: 'correct-player-movement', env: 'CORRECT_PLAYER_MOVEMENT', name: 'Snapback Desync Correction', value: 'true', category: 'security', desc: 'Corrects client location back to authoritative server location on desync.' },
+      { key: 'server-authoritative-block-breaking', env: 'SERVER_AUTHORITATIVE_BLOCK_BREAKING', name: 'Authoritative Block Breaking', value: 'true', category: 'security', desc: 'Server verifies pickaxe break times to stop instabreak hacks.' },
+      { key: 'transport', env: 'TRANSPORT', name: 'Network Transport Layer', value: 'raknet', category: 'network', desc: 'Network protocol: raknet (standard Bedrock UDP) or nethernet.' },
+      { key: 'compression-algorithm', env: 'COMPRESSION_ALGORITHM', name: 'Packet Compression Codec', value: 'snappy', category: 'network', desc: 'Packet compression algorithm (snappy for fast CPU, zlib for small bandwidth).' },
+      { key: 'compression-threshold', env: 'COMPRESSION_THRESHOLD', name: 'Compression Threshold', value: '1', category: 'network', desc: 'Payload threshold in bytes before compression is applied.' },
+      { key: 'disable-custom-skins', env: 'DISABLE_CUSTOM_SKINS', name: 'Block Custom Player Skins', value: 'false', category: 'security', desc: 'Restricts players to standard marketplace or vanilla skins.' },
+      { key: 'client-side-chunk-generation-enabled', env: 'CLIENT_SIDE_CHUNK_GENERATION_ENABLED', name: 'Client Chunk Generation', value: 'true', category: 'performance', desc: 'Offloads visual chunk mesh generation to players to save Azure server CPU.' }
+    ];
+
+    let dynamicSettings = [...BASE_SETTINGS];
+
+    // --- State Management ---
+    let currentConfig = {
+      host: '',
+      port: 19132,
+      name: 'Minecraft Bedrock Server',
+      region: 'southcentralus',
+      resourceGroup: 'mineResGroup',
+      containerName: 'minecotainer',
+      storageAccount: 'acismineacc',
+      storageShare: 'acismineshare'
+    };
+
+    let countdownTime = 15;
+    let refreshTimer = null;
+
+    // --- Lifecycle ---
+    document.addEventListener('DOMContentLoaded', async () => {
+      setupTabs();
+      setupEventListeners();
+      startServerClock();
+      addLog('SYS', 'Initializing Pal-Craft Vercel dashboard...');
+      
+      // 1. Fetch environment configuration from /api/config or URL params
+      await loadEnvironmentConfig();
+
+      // 2. Fetch live server status
+      await queryLiveStatus();
+
+      // 3. Start auto-refresh timer
+      startAutoRefresh();
+    });
+
+    // --- Live Server Clock (UTC & Regional) ---
+    function startServerClock() {
+      const updateClock = () => {
+        const now = new Date();
+        const utcHours = String(now.getUTCHours()).padStart(2, '0');
+        const utcMins = String(now.getUTCMinutes()).padStart(2, '0');
+        const utcSecs = String(now.getUTCSeconds()).padStart(2, '0');
+        const utcStr = `${utcHours}:${utcMins}:${utcSecs} UTC`;
+
+        const elNav = document.getElementById('navServerClock');
+        if (elNav) elNav.textContent = utcStr;
+
+        const elHero = document.getElementById('heroServerClock');
+        if (elHero) elHero.textContent = utcStr;
+
+        const tz = currentConfig.region?.includes('us') ? 'America/Chicago' : 'UTC';
+        const tzAbbr = currentConfig.region?.includes('us') ? 'CDT' : 'UTC';
+        try {
+          const regStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now);
+          const elReg = document.getElementById('heroRegionClock');
+          if (elReg) elReg.textContent = `(${regStr} ${tzAbbr})`;
+        } catch(e) {}
+      };
+
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
+
+    // --- Load Config from Vercel / Environment ---
+    async function loadEnvironmentConfig() {
+      // Check URL parameters first (e.g. ?host=...&port=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlHost = urlParams.get('host');
+      const urlPort = urlParams.get('port');
+
+      try {
+        addLog('NET', 'Fetching environment variables from /api/config...');
+        const resp = await fetch('/api/config');
+        if (resp.ok) {
+          const cfg = await resp.json();
+          currentConfig = { ...currentConfig, ...cfg };
+          addLog('SYS', `Environment loaded: host=${currentConfig.host}, port=${currentConfig.port}, region=${currentConfig.region}`);
+        } else {
+          addLog('WARN', 'Could not reach /api/config (running in standalone static mode). Using default host parameters.');
+        }
+      } catch (err) {
+        addLog('WARN', `Standalone mode: /api/config not available (${err.message}).`);
+      }
+
+      // If URL params provided, override
+      if (urlHost) currentConfig.host = urlHost;
+      if (urlPort) currentConfig.port = parseInt(urlPort, 10);
+
+      // If host still empty, default to Azure DNS format
+      if (!currentConfig.host) {
+        currentConfig.host = 'minesvrbedrock.southcentralus.azurecontainer.io';
+      }
+
+      // Update UI with environment details
+      updateEnvUi();
+    }
+
+    function updateEnvUi() {
+      document.getElementById('brandServerTitle').innerHTML = `${escapeHtml(currentConfig.name || currentConfig.serverName || 'Minecraft Server')} <span class="brand-badge">Azure & Vercel</span>`;
+      document.getElementById('serverTitle').textContent = currentConfig.name || currentConfig.serverName || 'Minecraft Bedrock Server';
+      document.getElementById('serverAddressDisplay').textContent = `${currentConfig.host}:${currentConfig.port}`;
+      document.getElementById('azureRegionText').innerHTML = `Azure ACI: <strong>${escapeHtml(currentConfig.region || 'southcentralus')}</strong>`;
+      
+      // Azure tab details
+      document.getElementById('envResourceGroup').textContent = currentConfig.resourceGroup || 'mineResGroup';
+      document.getElementById('envContainerName').textContent = currentConfig.containerName || 'minecotainer';
+      document.getElementById('envStorageInfo').textContent = `${currentConfig.storageAccount || 'acismineacc'} / ${currentConfig.storageShare || 'acismineshare'}`;
+
+      // Commands
+      const rg = currentConfig.resourceGroup || 'mineResGroup';
+      const cn = currentConfig.containerName || 'minecotainer';
+      document.getElementById('cmdStartServer').textContent = `az container start -g ${rg} -n ${cn}`;
+      document.getElementById('cmdStopServer').textContent = `az container stop -g ${rg} -n ${cn}`;
+      document.getElementById('cmdLogsServer').textContent = `az container logs -g ${rg} -n ${cn} --follow`;
+
+      // Modal inputs
+      document.getElementById('inputHost').value = currentConfig.host;
+      document.getElementById('inputPort').value = currentConfig.port;
+      document.getElementById('inputName').value = currentConfig.name || currentConfig.serverName || '';
+    }
+
+    // --- Query Live Status (Everything dynamically fetched) ---
+    async function queryLiveStatus() {
+      const svg = document.getElementById('refreshSvg');
+      svg.classList.add('spin');
+
+      const host = currentConfig.host;
+      const port = currentConfig.port;
+
+      addLog('NET', `Dispatching query to Bedrock server: ${host}:${port}...`);
+      const fetchStart = performance.now();
+
+      try {
+        let data = null;
+        let roundtripLatency = 0;
+
+        // Try /api/status first (Vercel Serverless Function)
+        try {
+          const apiResp = await fetch(`/api/status?host=${encodeURIComponent(host)}&port=${port}`);
+          roundtripLatency = Math.round(performance.now() - fetchStart);
+          if (apiResp.ok) {
+            data = await apiResp.json();
+          }
+        } catch (apiErr) {
+          addLog('WARN', `Serverless endpoint /api/status error: ${apiErr.message}. Trying direct client resolver fallback...`);
+        }
+
+        // Direct public fallback if /api/status is not running
+        if (!data) {
+          const directResp = await fetch(`https://api.mcstatus.io/v2/status/bedrock/${encodeURIComponent(host)}:${port}`);
+          roundtripLatency = Math.round(performance.now() - fetchStart);
+          if (directResp.ok) {
+            const raw = await directResp.json();
+            data = {
+              online: Boolean(raw.online),
+              host: host,
+              port: port,
+              ip_address: raw.ip_address || null,
+              version: raw.version?.name || null,
+              protocol: raw.version?.protocol || null,
+              motd: raw.motd?.clean || '',
+              gamemode: raw.gamemode || null,
+              players: raw.players || { online: 0, max: 0, list: [] },
+              latency: roundtripLatency
+            };
+          }
+        }
+
+        if (data && data.online) {
+          applyOnlineState(data, roundtripLatency);
+        } else {
+          applyOfflineState(host, port, roundtripLatency);
+        }
+
+      } catch (err) {
+        addLog('ERR', `Query failed: ${err.message}`);
+        applyOfflineState(host, port, null, err.message);
+      } finally {
+        svg.classList.remove('spin');
+        countdownTime = 15;
+        document.getElementById('lastUpdatedTime').textContent = new Date().toLocaleTimeString();
+      }
+    }
+
+    // --- Apply Online Live Data ---
+    function applyOnlineState(data, latency) {
+      addLog('NET', `Status ONLINE. Version: ${data.version || 'Unknown'}, Players: ${data.players?.online}/${data.players?.max}, Latency: ${latency}ms`);
+
+      const badge = document.getElementById('statusBadge');
+      badge.className = 'status-pill online';
+      document.getElementById('statusText').textContent = 'ONLINE';
+
+      // Header fields
+      if (data.motd) {
+        document.getElementById('serverMotd').textContent = data.motd;
+      }
+      if (data.version) {
+        document.getElementById('versionBadge').textContent = data.version;
+        document.getElementById('versionBadge').className = 'val-badge val-custom';
+      }
+      if (data.protocol) {
+        document.getElementById('protocolBadge').textContent = `Protocol ${data.protocol}`;
+        document.getElementById('protocolBadge').className = 'val-badge val-gold';
+      }
+
+      // KPIs
+      const onlinePlayers = data.players?.online ?? 0;
+      const maxPlayers = data.players?.max ?? 0;
+      document.getElementById('playerCountVal').textContent = onlinePlayers;
+      document.getElementById('playerMaxVal').textContent = maxPlayers;
+      document.getElementById('playerTabBadge').textContent = `${onlinePlayers} Online`;
+      const playerPct = maxPlayers > 0 ? (onlinePlayers / maxPlayers) * 100 : 0;
+      document.getElementById('playerProgressBar').style.width = `${Math.min(100, playerPct)}%`;
+
+      // Ping
+      const pingVal = data.latency || latency || 25;
+      document.getElementById('pingVal').textContent = pingVal;
+      document.getElementById('pingProgressBar').style.width = `${Math.min(100, Math.max(10, 100 - pingVal / 2))}%`;
+
+      // Gamemode
+      const gm = data.gamemode || 'Survival';
+      document.getElementById('gamemodeVal').textContent = gm;
+      document.getElementById('gamemodeProgressBar').style.width = '100%';
+
+      // Host
+      document.getElementById('hostHealthVal').textContent = 'Healthy';
+      document.getElementById('hostHealthSub').textContent = `${currentConfig.region || 'Azure ACI'}`;
+      document.getElementById('hostProgressBar').style.width = '100%';
+
+      // Telemetry Box
+      document.getElementById('telemetryStatusBadge').textContent = 'Connected';
+      document.getElementById('telemetryStatusBadge').className = 'val-badge val-true';
+      document.getElementById('telResolvedIp').textContent = data.ip_address || data.host;
+      document.getElementById('telProtocol').textContent = data.protocol ? `RakNet (${data.protocol})` : 'RakNet UDP';
+      document.getElementById('telPort').textContent = `${data.port} (UDP)`;
+
+      // Azure ACI Telemetry (if returned)
+      if (data.azure && !data.azure.error && data.azure.state) {
+        document.getElementById('azureTelemetryCard').style.display = 'block';
+        document.getElementById('azAciState').textContent = data.azure.state;
+        document.getElementById('azAciCpu').textContent = `${data.azure.cpu || 2} vCPU`;
+        document.getElementById('azAciRam').textContent = `${data.azure.memoryInGB || 4} GB`;
+        document.getElementById('azAciProv').textContent = data.azure.provisioningState || 'Succeeded';
+      }
+
+      // Render Live Players Roster
+      renderLivePlayerRoster(data.players);
+
+      // Synchronize Settings with fetched data
+      syncSettingsWithFetchedData(data);
+    }
+
+    // --- Apply Offline / Unreachable Live Data ---
+    function applyOfflineState(host, port, latency, errorMsg) {
+      addLog('WARN', `Server at ${host}:${port} is OFFLINE or UNREACHABLE.`);
+
+      const badge = document.getElementById('statusBadge');
+      badge.className = 'status-pill offline';
+      document.getElementById('statusText').textContent = 'OFFLINE';
+
+      document.getElementById('serverMotd').textContent = errorMsg 
+        ? `Connection Error: ${errorMsg}` 
+        : `Server is currently offline or unreachable at ${host}:${port}. Verify that the Azure Container Instance is running and UDP port 19132 is open.`;
+
+      document.getElementById('versionBadge').textContent = 'Offline';
+      document.getElementById('versionBadge').className = 'val-badge val-false';
+      document.getElementById('protocolBadge').textContent = 'No Signal';
+      document.getElementById('protocolBadge').className = 'val-badge val-none';
+
+      // KPIs
+      document.getElementById('playerCountVal').textContent = '0';
+      document.getElementById('playerMaxVal').textContent = '0';
+      document.getElementById('playerTabBadge').textContent = '0 Online';
+      document.getElementById('playerProgressBar').style.width = '0%';
+
+      document.getElementById('pingVal').textContent = '--';
+      document.getElementById('pingProgressBar').style.width = '0%';
+
+      document.getElementById('gamemodeVal').textContent = 'Offline';
+      document.getElementById('gamemodeProgressBar').style.width = '0%';
+
+      document.getElementById('hostHealthVal').textContent = 'Unreachable';
+      document.getElementById('hostHealthSub').textContent = 'No response';
+      document.getElementById('hostProgressBar').style.width = '0%';
+
+      // Telemetry Box
+      document.getElementById('telemetryStatusBadge').textContent = 'Disconnected';
+      document.getElementById('telemetryStatusBadge').className = 'val-badge val-false';
+      document.getElementById('telResolvedIp').textContent = 'Unresolved';
+      document.getElementById('telProtocol').textContent = 'None';
+      document.getElementById('telPort').textContent = `${port} (UDP)`;
+
+      // Render Empty Player List
+      const tbody = document.getElementById('playerTableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; color: var(--text-dim); padding: 32px;">
+            Server is currently offline or unreachable. 0 connected players.
+          </td>
+        </tr>
+      `;
+
+      // Render settings without mock active values
+      renderSettings();
+    }
+
+    // --- Render Live Player Roster from Real Query Data ---
+    function renderLivePlayerRoster(playersData) {
+      const tbody = document.getElementById('playerTableBody');
+      tbody.innerHTML = '';
+
+      const list = playersData?.list || [];
+      const onlineCount = playersData?.online || 0;
+
+      if (list.length > 0) {
+        list.forEach(p => {
+          const name = p.name_clean || p.name_raw || p.name || (typeof p === 'string' ? p : 'Player');
+          const initial = name.charAt(0).toUpperCase();
+          const uuid = p.uuid || 'Xbox Live Auth';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+              <div class="player-cell">
+                <div class="player-avatar">${initial}</div>
+                <div><strong style="color: #fff;">${escapeHtml(name)}</strong></div>
+              </div>
+            </td>
+            <td><span class="val-badge val-true">Active Session</span></td>
+            <td><span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(uuid)}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else if (onlineCount > 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align: center; color: var(--pal-cyan); padding: 24px;">
+              <strong>${onlineCount} Player(s) Online.</strong><br>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">Specific player gamertags are concealed by Bedrock query security configuration.</span>
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align: center; color: var(--text-dim); padding: 32px;">
+              No players currently online on this server.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // --- Synchronize Settings with Fetched Data ---
+    function syncSettingsWithFetchedData(data) {
+      dynamicSettings = BASE_SETTINGS.map(setting => {
+        const copy = { ...setting };
+        if (copy.key === 'server-name' && currentConfig.name) copy.value = currentConfig.name;
+        if (copy.key === 'gamemode' && data.gamemode) copy.value = data.gamemode.toLowerCase();
+        if (copy.key === 'max-players' && data.players?.max) copy.value = String(data.players.max);
+        return copy;
+      });
+
+      const activeCat = document.querySelector('.filter-pill.active')?.getAttribute('data-category') || 'all';
+      const kw = document.getElementById('settingSearch').value;
+      renderSettings(activeCat, kw);
+    }
+
+    // --- Render Settings Matrix ---
+    function renderSettings(filterCategory = 'all', searchKeyword = '') {
+      const grid = document.getElementById('settingsGrid');
+      grid.innerHTML = '';
+
+      const kw = searchKeyword.toLowerCase().trim();
+      const filtered = dynamicSettings.filter(item => {
+        const matchesCat = (filterCategory === 'all' || item.category === filterCategory);
+        const matchesKw = !kw || 
+          item.name.toLowerCase().includes(kw) || 
+          item.key.toLowerCase().includes(kw) || 
+          item.env.toLowerCase().includes(kw) ||
+          item.desc.toLowerCase().includes(kw);
+        return matchesCat && matchesKw;
+      });
+
+      document.getElementById('settingsCountBadge').textContent = `${filtered.length} Parameters`;
+
+      filtered.forEach(setting => {
+        const card = document.createElement('div');
+        card.className = 'setting-card';
+
+        let valBadgeClass = 'val-custom';
+        let displayVal = setting.value || 'default';
+        if (displayVal === 'true') valBadgeClass = 'val-true';
+        else if (displayVal === 'false') valBadgeClass = 'val-false';
+        else if (setting.key === 'difficulty' || setting.key === 'gamemode') valBadgeClass = 'val-gold';
+
+        card.innerHTML = `
+          <div>
+            <div class="setting-header">
+              <div class="setting-info">
+                <h4>${escapeHtml(setting.name)}</h4>
+                <div class="setting-key">${escapeHtml(setting.key)}</div>
+              </div>
+              <span class="val-badge ${valBadgeClass}">${escapeHtml(displayVal)}</span>
+            </div>
+            <p class="setting-desc" style="margin-top: 8px;">${escapeHtml(setting.desc)}</p>
+          </div>
+          <div class="setting-control">
+            <span class="setting-env-tag">ENV: ${escapeHtml(setting.env)}</span>
+            <button class="copy-icon-btn" onclick="copyText('${escapeHtml(setting.key)}=${escapeHtml(setting.value)}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // --- Live Diagnostics Console ---
+    function addLog(tag, msg) {
+      const container = document.getElementById('terminalLogs');
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+      let tagClass = 'log-sys';
+      if (tag === 'NET') tagClass = 'log-net';
+      if (tag === 'WARN') tagClass = 'log-warn';
+      if (tag === 'ERR') tagClass = 'log-err';
+      if (tag === 'CLIENT') tagClass = 'log-client';
+
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `
+        <span class="log-time">[${timeStr}]</span>
+        <span class="${tagClass}">[${tag}]</span>
+        <span>${escapeHtml(msg)}</span>
+      `;
+      container.appendChild(line);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearConsole() {
+      document.getElementById('terminalLogs').innerHTML = '';
+      addLog('SYS', 'Diagnostics terminal cleared.');
+    }
+
+    // --- Tab Switching ---
+    function setupTabs() {
+      const tabs = document.querySelectorAll('.tab-btn');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+          tab.classList.add('active');
+          const targetId = tab.getAttribute('data-tab');
+          const pane = document.getElementById(targetId);
+          if (pane) pane.classList.add('active');
+        });
+      });
+    }
+
+    // --- Auto Refresh Loop ---
+    function startAutoRefresh() {
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        countdownTime--;
+        const el = document.getElementById('countdown');
+        if (el) el.textContent = countdownTime;
+
+        if (countdownTime <= 0) {
+          queryLiveStatus();
+        }
+      }, 1000);
+    }
+
+    // --- Event Listeners ---
+    function setupEventListeners() {
+      document.getElementById('btnRefreshStatus').addEventListener('click', () => {
+        queryLiveStatus();
+      });
+
+      document.getElementById('btnCopyAddress').addEventListener('click', () => {
+        const text = `${currentConfig.host}:${currentConfig.port}`;
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(`Copied server address: ${text}`);
+        });
+      });
+
+      document.getElementById('btnDirectConnect').addEventListener('click', () => {
+        const uri = `minecraft://?addExternalServer=${encodeURIComponent(currentConfig.name)}|${currentConfig.host}:${currentConfig.port}`;
+        window.location.href = uri;
+        showToast('Direct join link dispatched to Minecraft Bedrock');
+      });
+
+      document.getElementById('settingSearch').addEventListener('input', (e) => {
+        const activeFilter = document.querySelector('.filter-pill.active')?.getAttribute('data-category') || 'all';
+        renderSettings(activeFilter, e.target.value);
+      });
+
+      document.querySelectorAll('.filter-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+          pill.classList.add('active');
+          const cat = pill.getAttribute('data-category');
+          const kw = document.getElementById('settingSearch').value;
+          renderSettings(cat, kw);
+        });
+      });
+
+      document.getElementById('btnExportProperties').addEventListener('click', exportServerProperties);
+      document.getElementById('btnExportEnv').addEventListener('click', exportEnvVariables);
+
+      // Terminal form
+      document.getElementById('terminalForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('terminalInput');
+        const cmd = input.value.trim();
+        if (!cmd) return;
+
+        addLog('CLIENT', cmd);
+        if (cmd === '/help' || cmd === 'help') {
+          addLog('SYS', 'Diagnostics Help: Commands sent here interact with client diagnostics. To send in-game console commands to Azure, configure RCON in Azure container variables.');
+        } else if (cmd === '/query' || cmd === 'query') {
+          queryLiveStatus();
+        } else {
+          addLog('SYS', `Command recorded. Note: Direct remote RCON execution from web client requires RCON_PORT configured in your Azure container.`);
+        }
+        input.value = '';
+      });
+
+      // Target Host Modal
+      const modal = document.getElementById('configModal');
+      document.getElementById('btnConfigModal').addEventListener('click', () => {
+        modal.classList.add('active');
+      });
+
+      document.getElementById('modalClose').addEventListener('click', () => {
+        modal.classList.remove('active');
+      });
+
+      document.getElementById('btnSaveConfig').addEventListener('click', () => {
+        const newHost = document.getElementById('inputHost').value.trim();
+        const newPort = parseInt(document.getElementById('inputPort').value, 10) || 19132;
+        const newName = document.getElementById('inputName').value.trim();
+
+        if (newHost) currentConfig.host = newHost;
+        currentConfig.port = newPort;
+        if (newName) currentConfig.name = newName;
+
+        updateEnvUi();
+        modal.classList.remove('active');
+        showToast('Target server endpoint updated!');
+        queryLiveStatus();
+      });
+    }
+
+    // --- Server Control Actions (Start, Stop, Restart) ---
+    async function sendServerAction(action) {
+      if (action === 'stop') {
+        const confirmStop = confirm('Are you sure you want to STOP the Minecraft Bedrock server? Connected players will be disconnected and Azure container billing will pause.');
+        if (!confirmStop) return;
+      }
+
+      showToast(`Dispatching ${action.toUpperCase()} command to Azure...`);
+      addLog('SYS', `Dispatched '${action.toUpperCase()}' request to /api/control...`);
+
+      const btnMap = {
+        start: document.getElementById('btnStartServer'),
+        restart: document.getElementById('btnRestartServer'),
+        stop: document.getElementById('btnStopServer')
+      };
+      if (btnMap[action]) {
+        btnMap[action].style.opacity = '0.6';
+        btnMap[action].style.pointerEvents = 'none';
+      }
+
+      try {
+        const resp = await fetch(`/api/control?action=${encodeURIComponent(action)}`, {
+          method: 'POST'
+        });
+        const res = await resp.json();
+
+        if (res.success) {
+          showToast(`Success: ${res.message}`);
+          addLog('NET', `Azure response: ${res.message}`);
+          setTimeout(queryLiveStatus, 4000);
+          setTimeout(queryLiveStatus, 9000);
+        } else {
+          showToast(`Error: ${res.error || 'Failed to dispatch command'}`);
+          addLog('ERR', `Action ${action} error: ${res.error}`);
+        }
+      } catch (err) {
+        showToast(`Control error: ${err.message}`);
+        addLog('ERR', `Failed to reach /api/control: ${err.message}`);
+      } finally {
+        if (btnMap[action]) {
+          btnMap[action].style.opacity = '1';
+          btnMap[action].style.pointerEvents = 'auto';
+        }
+      }
+    }
+
+    // --- Exports & Helpers ---
+    function exportServerProperties() {
+      let content = '# Minecraft Bedrock server.properties\\n# Exported from Pal-Craft Vercel Dashboard\\n';
+      dynamicSettings.forEach(s => {
+        content += `${s.key}=${s.value || ''}\\n`;
+      });
+      downloadFile('server.properties', content);
+      showToast('Downloaded server.properties');
+    }
+
+    function exportEnvVariables() {
+      let content = '# Azure Container Instances Environment Variables\\nEULA=TRUE\\n';
+      dynamicSettings.forEach(s => {
+        if (s.value) content += `${s.env}="${s.value}"\\n`;
+      });
+      downloadFile('bedrock.env', content);
+      showToast('Downloaded bedrock.env');
+    }
+
+    function copyVercelEnvTemplate() {
+      const text = document.getElementById('vercelEnvBlock').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Vercel environment variables copied!');
+      });
+    }
+
+    function copyText(str) {
+      navigator.clipboard.writeText(str).then(() => {
+        showToast(`Copied: ${str}`);
+      });
+    }
+
+    function downloadFile(filename, text) {
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastBox');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
