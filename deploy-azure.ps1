@@ -11,7 +11,7 @@ param (
     [string]$FileShareName = "acismineshare",
     [string]$ContainerName = "minecotainer",
     [string]$DnsNameLabel = "minesvrbedrock",
-    [string]$ServerName = "Azure Bedrock Realm",
+    [string]$ServerName = "sgkserver",
     [string]$Gamemode = "survival",
     [string]$Difficulty = "normal",
     [int]$Cpu = 2,

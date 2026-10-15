@@ -2,15 +2,15 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=5');
   res.setHeader('Content-Type', 'application/json');
 
-  const host = (req.query.host || process.env.MINECRAFT_SERVER_HOST || 'minesvrbedrock.southcentralus.azurecontainer.io').trim();
+  const host = (req.query.host || process.env.MINECRAFT_SERVER_HOST || 'minesvrbedrock.centralindia.azurecontainer.io').trim();
   const port = parseInt(req.query.port || process.env.MINECRAFT_SERVER_PORT || 19132, 10);
 
   const envMeta = {
-    serverName: process.env.SERVER_NAME || 'Azure Bedrock Realm',
-    region: process.env.AZURE_REGION || 'southcentralus',
-    resourceGroup: process.env.AZURE_RESOURCE_GROUP || 'mineResGroup',
+    serverName: process.env.SERVER_NAME || 'sgkserver',
+    region: process.env.AZURE_REGION || 'centralindia',
+    resourceGroup: process.env.AZURE_RESOURCE_GROUP || 'minecraftResGroup',
     containerName: process.env.AZURE_CONTAINER_NAME || 'minecotainer',
-    storageAccount: process.env.AZURE_STORAGE_ACCOUNT || 'acismineacc',
+    storageAccount: process.env.AZURE_STORAGE_ACCOUNT || 'surymineacc',
     storageShare: process.env.AZURE_STORAGE_SHARE || 'acismineshare'
   };
 

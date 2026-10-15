@@ -17,7 +17,7 @@ In your Vercel Project Settings under **Environment Variables**, add the followi
 | :--- | :--- | :--- |
 | `MINECRAFT_SERVER_HOST` | `minesvrbedrock.centralindia.azurecontainer.io` | Your Azure Container FQDN or Public IP |
 | `MINECRAFT_SERVER_PORT` | `19132` | Minecraft Bedrock UDP port |
-| `SERVER_NAME` | `Azure Bedrock Realm` | Display name in the dashboard hero header |
+| `SERVER_NAME` | `sgkserver` | Display name in the dashboard hero header |
 | `AZURE_REGION` | `centralindia` | Azure deployment region |
 | `AZURE_RESOURCE_GROUP` | `minecraftResGroup` | Azure Resource Group name |
 | `AZURE_CONTAINER_NAME` | `minecotainer` | Azure Container Instance (ACI) name |
