@@ -113,6 +113,7 @@ try {
             SERVER_PORT=19132 `
             SERVER_PORT_V6=19133 `
             ONLINE_MODE="false" `
+            TRANSPORT="nethernet" `
         --azure-file-volume-account-name $StorageAccountName `
         --azure-file-volume-account-key $STORAGE_KEY `
         --azure-file-volume-share-name $FileShareName `
@@ -142,6 +143,7 @@ try {
             SERVER_PORT=19132 `
             SERVER_PORT_V6=19133 `
             ONLINE_MODE="false" `
+            TRANSPORT="nethernet" `
         --azure-file-volume-account-name $StorageAccountName `
         --azure-file-volume-account-key $STORAGE_KEY `
         --azure-file-volume-share-name $FileShareName `
